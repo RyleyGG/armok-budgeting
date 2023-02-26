@@ -10,11 +10,11 @@ class NavManager:
 
     def __init__(self):
         self.root = tk.Tk()
+        self.root.bind('<Button-1>', self.focusElem)
         self.windowTitle = 'Armok Budgeting'
         self.root.title(self.windowTitle)
         self.displayHome()
         self.root.mainloop()
-
 
     # MAIN DISPLAY FUNCTIONS
     def displayHome(self):
@@ -39,7 +39,7 @@ class NavManager:
         self.populateFinances()
 
 
-    # HELPERS
+    # SPECIFIC HELPERS
     def populateFinances(self):
         label = tk.Label(self.root)
         label.grid(row = 1, column = 0, sticky = 'W', pady = 2)
@@ -88,24 +88,35 @@ class NavManager:
             self.createLabelFieldPair(k, rowIter, v, 'financial')
             rowIter += 1
         
-        saveBtn = tk.Button(self.root, text='Save Changes', command=self.commitFinances)
+        saveBtn = tk.Button(self.root, text='Save Changes')
+        saveBtn.bind('<Button-1>', self.focusElem)
+        saveBtn.bind('<ButtonRelease-1>', self.commitFinances)
         saveBtn.grid(row = rowIter + 1, column = self.rightmostCol, sticky = 'NE', pady = 2)
 
-
-    def commitFinances(self):
+    def commitFinances(self, event):
         cwd = os.getcwd()
         json.dump(self.financialData, open(f'{cwd}/data/financial_data.json', 'w'))
+    
+    def updateFinancialDict(self, event):
+        k = event.widget.tag
+        v = event.widget.get()
+        self.financialData[k] = v
+
+
+    # GENERIC GUI HELPERS
+    def focusElem(self, event):
+        event.widget.focus_force()
 
     def createLabelFieldPair(self, labelText, rowIter, fieldText, callbackConfig):
             label = tk.Label(self.root, text = labelText)
             label.grid(row = rowIter, column = 0, sticky = 'W', pady = 2)
             
+            # sv = tk.StringVar()
             field = tk.Entry(self.root)
             field.tag = labelText
             field.insert(tk.END, fieldText)
             if callbackConfig == 'financial':
                 field.bind('<FocusOut>', self.updateFinancialDict)
-                field.bind('<Leave>', self.updateFinancialDict)
             field.grid(row = rowIter, column = 1, sticky = 'E', pady = 2)
 
     def changeViews(self, homeOpt = False):
@@ -115,8 +126,3 @@ class NavManager:
         if homeOpt:
             returnBtn = tk.Button(self.root, text='Return Home', command=self.displayHome)
             returnBtn.grid(row = 0, column = self.rightmostCol, sticky = 'NE', pady = 2)
-    
-    def updateFinancialDict(self, event):
-        k = event.widget.tag
-        v = event.widget.get()
-        self.financialData[k] = v
